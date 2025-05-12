@@ -47,4 +47,20 @@ class CustomEmailTokenSerializer(TokenObtainPairSerializer):
             "is_fitwork_admin": user.is_fitwork_admin
         })
         return data
+    
+class RegisterCompanyAdminSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'username', 'password']
+
+    def create(self, validated_data):
+        return User.objects.create_user(
+            email=validated_data['email'],
+            username=validated_data['username'],
+            password=validated_data['password'],
+            is_candidate=False,
+            is_company_admin=True
+        )
 
