@@ -10,6 +10,9 @@ class User(AbstractUser):
     is_company_admin = models.BooleanField(default=False)
     is_fitwork_admin = models.BooleanField(default=False)
 
+    USERNAME_FIELD = 'email' 
+    REQUIRED_FIELDS = ['username']  
+
     def __str__(self):
         return self.username
     
