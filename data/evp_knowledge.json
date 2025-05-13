@@ -1,0 +1,127 @@
+[
+  {
+    "company_name": "Gojek",
+    "career_url": "https://www.gojek.io/life-at-gojek",
+    "mission_statement": "To improve the lives of users by solving daily challenges through innovation and technology.",
+    "core_values": [
+      "Empathy",
+      "Agility",
+      "Ownership",
+      "Social Impact",
+      "User Obsession"
+    ],
+    "culture_keywords": [
+      "Inclusive",
+      "Fast-paced",
+      "Product-led",
+      "Remote-friendly"
+    ]
+  },
+  {
+    "company_name": "Traveloka",
+    "career_url": "https://www.traveloka.com/en-id/careers",
+    "mission_statement": "To empower customers to discover the world around them and meet their lifestyle aspirations.",
+    "core_values": [
+      "Customer First",
+      "Excellence",
+      "Innovation",
+      "Teamwork",
+      "Accountability"
+    ],
+    "culture_keywords": [
+      "User-centric",
+      "Data-driven",
+      "Collaborative",
+      "Flexible work culture"
+    ]
+  },
+  {
+    "company_name": "Ruangguru",
+    "career_url": "https://career.ruangguru.com/our-values",
+    "mission_statement": "To make quality education accessible for everyone, everywhere.",
+    "core_values": [
+      "Integrity",
+      "Growth Mindset",
+      "Collaboration",
+      "Execution Excellence",
+      "Innovation"
+    ],
+    "culture_keywords": [
+      "Education-focused",
+      "Mission-driven",
+      "Supportive",
+      "Agile"
+    ]
+  },
+  {
+    "company_name": "Blibli",
+    "career_url": "https://careers.blibli.com/#know-us",
+    "mission_statement": "To deliver a fully integrated, omnichannel commerce experience with excellent service and innovation.",
+    "core_values": [
+      "Customer Obsession",
+      "Innovation",
+      "Respect",
+      "Teamwork",
+      "Integrity"
+    ],
+    "culture_keywords": [
+      "People-first",
+      "Tech-powered",
+      "Innovative workplace",
+      "Collaborative teams"
+    ]
+  },
+  {
+    "company_name": "DANA",
+    "career_url": "https://www.dana.id/",
+    "mission_statement": "To bring inclusive financial services to every Indonesian through secure and seamless digital payment technology.",
+    "core_values": [
+      "Trust",
+      "Innovation",
+      "Simplicity",
+      "Inclusivity"
+    ],
+    "culture_keywords": [
+      "Digital-first",
+      "Growth-focused",
+      "Transparent",
+      "Cross-functional teamwork"
+    ]
+  },
+  {
+    "company_name": "Xendit",
+    "career_url": "https://www.xendit.co/careers",
+    "mission_statement": "To make payments simple, secure, and accessible across Southeast Asia.",
+    "core_values": [
+      "Execution",
+      "Integrity",
+      "Customer Centricity",
+      "Curiosity",
+      "Bias for Action"
+    ],
+    "culture_keywords": [
+      "Startup spirit",
+      "Execution-oriented",
+      "Engineering excellence",
+      "Diverse team"
+    ]
+  },
+  {
+    "company_name": "J&T Express",
+    "career_url": "https://www.jet.co.id/about/company",
+    "mission_statement": "To provide express services with efficiency and reliability, supported by advanced technology and infrastructure.",
+    "core_values": [
+      "Speed",
+      "Trust",
+      "Customer Service",
+      "Commitment",
+      "Efficiency"
+    ],
+    "culture_keywords": [
+      "Operational excellence",
+      "Tech-integrated",
+      "Result-driven",
+      "Service-oriented"
+    ]
+  }
+]
