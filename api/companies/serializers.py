@@ -9,3 +9,8 @@ class CompanySerializer(serializers.ModelSerializer):
             'mission_statement', 'core_values', 'culture_keywords'
         ]
         read_only_fields = ['id']
+
+class UpdateEVPCompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = ['name', 'career_url', 'mission_statement', 'core_values', 'culture_keywords']

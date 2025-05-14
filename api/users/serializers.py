@@ -53,13 +53,14 @@ class RegisterCompanyAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'password']
+        fields = ['email', 'username', 'password', 'company_id']
 
     def create(self, validated_data):
         return User.objects.create_user(
             email=validated_data['email'],
             username=validated_data['username'],
             password=validated_data['password'],
+            company_id=validated_data['company_id'],
             is_candidate=False,
             is_company_admin=True
         )
