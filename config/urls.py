@@ -22,5 +22,6 @@ BASE_URL = 'api/v1/'
 urlpatterns = [
     path('admin/', admin.site.urls),
     path(BASE_URL, include('api.users.urls')),
-    path(BASE_URL, include('api.companies.urls'))
+    path(BASE_URL, include('api.companies.urls')),
+    path(BASE_URL, include('api.assessments.urls'))
 ]

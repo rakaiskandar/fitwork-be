@@ -5,13 +5,15 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import *
 from api.common.permissions import *
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 
 class RegisterView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
 
 class CustomEmailTokenView(TokenObtainPairView):
+    permission_classes = [AllowAny]
     serializer_class = CustomEmailTokenSerializer
 
 class RegisterCompanyAdminView(generics.CreateAPIView):
