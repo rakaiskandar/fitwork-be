@@ -12,22 +12,25 @@ llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-flash", temperature=0.4)
 prompt = PromptTemplate(
     input_variables=["company_name", "mission", "core_values", "culture_keywords"],
     template="""
-You are an AI assessment builder. Generate 10 culture fit questions in JSON format based on the following EVP.
+You are culture-fit assessment designer in company 10+ years experience. Generate 10 Likert-scale questions to assess a candidate's cultural fit based on the following company EVP:
 
 Company Name: {company_name}
 Mission: {mission}
 Core Values: {core_values}
 Culture Keywords: {culture_keywords}
 
-Return **only** a valid JSON array like this:
+Return ONLY a valid JSON array with the following structure:
+
 [
   {{
-    "dimension": "Integrity",
-    "statement": "I value being honest and transparent in decision-making."
+    "dimension": "Collaboration",
+    "statement": "I enjoy working in a team and sharing responsibility.",
+    "scale": "Likert"
   }},
   ...
 ]
-Do not add explanations or markdown.
+
+Do not include explanations, markdown, or code blocks.
 """
 )
 

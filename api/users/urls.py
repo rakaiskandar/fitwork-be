@@ -7,5 +7,6 @@ urlpatterns = [
     path('login/', CustomEmailTokenView.as_view(), name='token_obtain_pair'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('company/register/', RegisterCompanyAdminView.as_view(), name='register_company')
+    path('company/register/', RegisterCompanyAdminView.as_view(), name='register_company'),
+    path('me/', MeView.as_view(), name='me_profile')
 ]

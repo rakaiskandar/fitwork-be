@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import GenerateAssessmentView
+from .views import GenerateAssessmentView, SubmitAssessmentView
 
 urlpatterns = [
-    path('ai/generate/<uuid:company_id>/', GenerateAssessmentView.as_view(), name='generate-assessment'),
+    path('assessments/submit/', SubmitAssessmentView.as_view(), name='submit_assessment'),
+    path('assessments/generate/<uuid:company_id>/', GenerateAssessmentView.as_view(), name='generate_assessment'),
 ]

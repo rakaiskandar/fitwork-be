@@ -15,3 +15,30 @@ class AssessmentAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssessmentAnswer
         fields = '__all__'
+
+class AnswerInputSerializer(serializers.Serializer):
+    question_id = serializers.UUIDField()
+    score = serializers.IntegerField(min_value=1, max_value=5)
+
+class AssessmentSubmitSerializer(serializers.Serializer):
+    company_id = serializers.UUIDField()
+    answers = AnswerInputSerializer(many=True)
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        company_id = validated_data['company_id']
+        answers_data = validated_data['answers']
+
+        session = AssessmentSession.objects.create(
+            user=user,
+            company_id=company_id
+        )
+
+        for ans in answers_data:
+            AssessmentAnswer.objects.create(
+                session=session,
+                question_id=ans['question_id'],
+                score=ans['score']
+            )
+
+        return session

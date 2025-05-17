@@ -9,6 +9,7 @@ class AssessmentQuestion(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='questions')
     dimension = models.CharField(max_length=100)
     statement = models.TextField()
+    scale = models.CharField(max_length=20, default="Likert")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -20,6 +21,9 @@ class AssessmentSession(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     overall_score = models.FloatField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"Session by {self.user.email} on {self.company.name}"
 
 class AssessmentAnswer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
