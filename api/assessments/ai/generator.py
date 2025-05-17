@@ -19,6 +19,7 @@ assessment_prompt = PromptTemplate(
     template="""
 You are a Culture-Fit Assessment Designer with 10+ years of experience in HR and organizational psychology. 
 Generate 10 Likert-scale statements to assess a candidate's cultural fit with the company's values and environment.
+Each question must be a statement rated 1-5 (1 = Strongly Disagree; 5 = Strongly Agree). 
 
 Company Name: {company_name}
 Mission: {mission}

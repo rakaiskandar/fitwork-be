@@ -1,9 +1,10 @@
-from api.assessments.ai.gemini_langchain import generate_questions_from_company
+from collections import defaultdict
+from api.assessments.ai.generator import generate_questions_from_company
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from api.companies.models import Company
-from .models import AssessmentQuestion
+from .models import AssessmentQuestion, AssessmentSession
 from .serializers import AssessmentQuestionSerializer, AssessmentSubmitSerializer
 
 class GenerateAssessmentView(APIView):
@@ -58,3 +59,47 @@ class SubmitAssessmentView(APIView):
             session = serializer.save()
             return Response({"message": "Assessment submitted", "session_id": str(session.id)}, status=201)
         return Response(serializer.errors, status=400)
+
+class AssessmentResultView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, company_id):
+        try:
+            company = Company.objects.get(id=company_id)
+            session = AssessmentSession.objects.filter(user=request.user, company=company).order_by('-created_at').first()
+
+            if not session:
+                return Response({"error": "You haven't taken an assessment for this company."}, status=404)
+
+            answers = session.answers.select_related('question')
+            dimension_scores = defaultdict(list)
+
+            # Group scores by dimension
+            for ans in answers:
+                dimension_scores[ans.question.dimension].append(ans.score)
+
+            # Calculate per-dimension average
+            dimension_results = {
+                dimension: round(sum(scores) / len(scores), 2)
+                for dimension, scores in dimension_scores.items()
+            }
+
+            overall = round(sum([s for sl in dimension_scores.values() for s in sl]) / answers.count(), 2)
+
+            return Response({
+                "company": company.name,
+                "user": request.user.email,
+                "overall_score": overall,
+                "dimensions": dimension_results,
+                "answers": [
+                    {
+                        "question": ans.question.statement,
+                        "dimension": ans.question.dimension,
+                        "score": ans.score
+                    }
+                    for ans in answers
+                ]
+            })
+
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=404)

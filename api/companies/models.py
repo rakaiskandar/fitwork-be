@@ -30,7 +30,7 @@ class Company(models.Model):
         super().save(*args, **kwargs)
 
         if evp_changed:
-            from api.assessments.ai.gemini_langchain import generate_questions_from_company
+            from api.assessments.ai.generator import generate_questions_from_company
             from api.assessments.models import AssessmentQuestion
 
             # Optional: clear old questions
