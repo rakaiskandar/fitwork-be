@@ -1,5 +1,5 @@
 from .models import ChatSession, ChatMessage
-from .chat_engine import chat_chain, format_chat_history
+from .ai.chat_engine import chat_chain, format_chat_history
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated

@@ -14,3 +14,34 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+    # Check if EVP changed
+        if self.pk:
+            old = Company.objects.get(pk=self.pk)
+            evp_changed = (
+                old.mission_statement != self.mission_statement or
+                old.core_values != self.core_values or
+                old.culture_keywords != self.culture_keywords
+            )
+        else:
+            evp_changed = True
+
+        super().save(*args, **kwargs)
+
+        if evp_changed:
+            from api.assessments.ai.gemini_langchain import generate_questions_from_company
+            from api.assessments.models import AssessmentQuestion
+
+            # Optional: clear old questions
+            self.questions.all().delete()
+
+            # Create new questions
+            questions = generate_questions_from_company(self)
+            for q in questions:
+                AssessmentQuestion.objects.create(
+                    company=self,
+                    dimension=q["dimension"],
+                    statement=q["statement"],
+                    scale=q.get("scale", "Likert")
+                )

@@ -10,20 +10,39 @@ class GenerateAssessmentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, company_id):
+        force = request.query_params.get("force", "false").lower() == "true"
+
         try:
             company = Company.objects.get(id=company_id)
-            questions = generate_questions_from_company(company)
 
+            existing = company.questions.all()
+            if existing.exists() and not force:
+                return Response({
+                    "message": "Assessment already exists for this company.",
+                    "questions": AssessmentQuestionSerializer(existing, many=True).data
+                }, status=200)
+
+            # Delete old if regenerating
+            if existing.exists():
+                existing.delete()
+
+            # Generate new questions
+            questions = generate_questions_from_company(company)
             created = []
+
             for q in questions:
                 question = AssessmentQuestion.objects.create(
                     company=company,
                     dimension=q["dimension"],
-                    statement=q["statement"]
+                    statement=q["statement"],
+                    scale=q.get("scale", "Likert")
                 )
                 created.append(question)
 
-            return Response(AssessmentQuestionSerializer(created, many=True).data, status=201)
+            return Response({
+                "message": "Assessment generated.",
+                "questions": AssessmentQuestionSerializer(created, many=True).data
+            }, status=201)
 
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=404)
