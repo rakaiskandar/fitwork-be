@@ -25,9 +25,21 @@ class CustomEmailTokenSerializer(TokenObtainPairSerializer):
     username_field = 'email'  # login via email
 
     def validate(self, attrs):
-        # Rename 'email' → 'username' for compatibility with AbstractUser
+        # Ensure compatibility with AbstractUser which uses `username`
         attrs['username'] = attrs.get('email')
-        return super().validate(attrs)
+        data = super().validate(attrs)
+
+        self.user = self.user  # ✅ Ensure user is accessible later
+
+        # Include custom claims
+        data.update({
+            "email": self.user.email,
+            "is_candidate": self.user.is_candidate,
+            "is_company_admin": self.user.is_company_admin,
+            "is_fitwork_admin": self.user.is_fitwork_admin,
+        })
+
+        return data
 
     def create_token_response(self, user):
         token = super().get_token(user)
@@ -47,6 +59,18 @@ class CustomEmailTokenSerializer(TokenObtainPairSerializer):
             "is_fitwork_admin": user.is_fitwork_admin
         })
         return data
+    
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Custom JWT claims
+        token['email'] = user.email
+        token['is_candidate'] = user.is_candidate
+        token['is_company_admin'] = user.is_company_admin
+        token['is_fitwork_admin'] = user.is_fitwork_admin
+
+        return token
     
 class RegisterCompanyAdminSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
