@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf.urls.static import static
+from django.conf import settings
 
 BASE_URL = 'api/v1/'
 
@@ -26,3 +28,5 @@ urlpatterns = [
     path(BASE_URL, include('api.assessments.urls')),
     path(BASE_URL, include('api.chatbot.urls'))
 ]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

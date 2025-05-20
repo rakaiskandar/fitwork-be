@@ -2,9 +2,12 @@ from django.db import models
 import uuid
 # Create your models here.
 
+def company_logo_upload_path(instance, filename):
+    return f"company_logos/{instance.id}/{filename}"
 class Company(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
+    logo = models.ImageField(upload_to=company_logo_upload_path, blank=True, null=True)
     career_url = models.CharField(max_length=255)
     mission_statement = models.TextField()
     core_values = models.JSONField(default=list, help_text="List of company values (e.g. Innovation, Integrity)")
