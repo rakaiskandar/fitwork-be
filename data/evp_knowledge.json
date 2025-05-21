@@ -2,6 +2,7 @@
   {
     "company_name": "Gojek",
     "career_url": "https://www.gojek.io/life-at-gojek",
+    "logo": "https://www.gojek.io/img/GojekLogo.svg",
     "mission_statement": "To improve the lives of users by solving daily challenges through innovation and technology.",
     "core_values": [
       "Empathy",
@@ -20,6 +21,7 @@
   {
     "company_name": "Traveloka",
     "career_url": "https://www.traveloka.com/en-id/careers",
+    "logo": "https://d1785e74lyxkqq.cloudfront.net/_next/static/v3/9/97f3e7a54e9c6987283b78e016664776.svg",
     "mission_statement": "To empower customers to discover the world around them and meet their lifestyle aspirations.",
     "core_values": [
       "Customer First",
@@ -38,6 +40,7 @@
   {
     "company_name": "Ruangguru",
     "career_url": "https://career.ruangguru.com/our-values",
+    "logo": "https://cdn-web-2.ruangguru.com/landing-pages/assets/hs/Ruangguru%20Revamp%202022/Header%20dan%20Hero/logo%20RG.svg",
     "mission_statement": "To make quality education accessible for everyone, everywhere.",
     "core_values": [
       "Integrity",
@@ -56,6 +59,7 @@
   {
     "company_name": "Blibli",
     "career_url": "https://careers.blibli.com/#know-us",
+    "logo": "https://www.static-src.com/frontend/static/img/logo-blibli-blue.0f340eba.svg?w=114",
     "mission_statement": "To deliver a fully integrated, omnichannel commerce experience with excellent service and innovation.",
     "core_values": [
       "Customer Obsession",
@@ -74,6 +78,7 @@
   {
     "company_name": "DANA",
     "career_url": "https://www.dana.id/",
+    "logo": "https://a.m.dana.id/resource/danaweb-v2/logo-dana.svg",
     "mission_statement": "To bring inclusive financial services to every Indonesian through secure and seamless digital payment technology.",
     "core_values": [
       "Trust",
@@ -91,6 +96,7 @@
   {
     "company_name": "Xendit",
     "career_url": "https://www.xendit.co/careers",
+    "logo": "https://www.xendit.co/wp-content/uploads/2024/04/logo-xendit-2023.svg",
     "mission_statement": "To make payments simple, secure, and accessible across Southeast Asia.",
     "core_values": [
       "Execution",
@@ -109,6 +115,7 @@
   {
     "company_name": "J&T Express",
     "career_url": "https://www.jet.co.id/about/company",
+    "logo": "https://www.jet.co.id/static/images/logo.png",
     "mission_statement": "To provide express services with efficiency and reliability, supported by advanced technology and infrastructure.",
     "core_values": [
       "Speed",
