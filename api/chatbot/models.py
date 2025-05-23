@@ -7,6 +7,7 @@ class ChatSession(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_sessions')
     created_at = models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=100, blank=True)
 
 class ChatMessage(models.Model):
     ROLE_CHOICES = (("user", "User"), ("assistant", "Assistant"))
