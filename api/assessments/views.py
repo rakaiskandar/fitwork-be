@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from api.companies.models import Company
 from .models import AssessmentQuestion, AssessmentSession
-from .serializers import AssessmentQuestionSerializer, AssessmentSubmitSerializer
+from .serializers import AssessmentQuestionSerializer, AssessmentSubmitSerializer, AssessmentSessionSerializer
 
 class GenerateAssessmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -60,6 +60,13 @@ class SubmitAssessmentView(APIView):
             return Response({"message": "Assessment submitted", "session_id": str(session.id)}, status=201)
         return Response(serializer.errors, status=400)
 
+class UserSessionListView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AssessmentSessionSerializer
+
+    def get_queryset(self):
+        return AssessmentSession.objects.filter(user=self.request.user).order_by('-created_at')
+
 class AssessmentResultView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -103,3 +110,40 @@ class AssessmentResultView(APIView):
 
         except Company.DoesNotExist:
             return Response({"error": "Company not found"}, status=404)
+        
+class CompareSessionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        s1 = request.query_params.get('s1')
+        s2 = request.query_params.get('s2')
+        user = request.user
+
+        if not s1 or not s2:
+            return Response({"error": "Provide s1 and s2 session IDs."}, status=400)
+
+        try:
+            sess1 = AssessmentSession.objects.get(id=s1, user=user)
+            sess2 = AssessmentSession.objects.get(id=s2, user=user)
+        except AssessmentSession.DoesNotExist:
+            return Response({"error": "Session not found or not yours."}, status=404)
+
+        def session_scores(sess):
+            dim_scores = defaultdict(list)
+            for ans in sess.answers.select_related('question'):
+                dim_scores[ans.question.dimension].append(ans.score)
+
+            per_dim = {d: round(sum(scores)/len(scores), 2) for d, scores in dim_scores.items()}
+            overall = round(sum([s for sc in dim_scores.values() for s in sc]) / sess.answers.count(), 2)
+            return {
+                "session_id": str(sess.id),
+                "company": sess.company.name,
+                "created_at": sess.created_at,
+                "overall_score": overall,
+                "dimension_scores": per_dim
+            }
+
+        return Response({
+            "session1": session_scores(sess1),
+            "session2": session_scores(sess2),
+        })
