@@ -19,16 +19,15 @@ class Company(models.Model):
         return self.name
     
     def save(self, *args, **kwargs):
-    # Check if EVP changed
-        if self.pk:
+        evp_changed = True  # Default: anggap berubah
+
+        if self.pk and Company.objects.filter(pk=self.pk).exists():
             old = Company.objects.get(pk=self.pk)
             evp_changed = (
                 old.mission_statement != self.mission_statement or
                 old.core_values != self.core_values or
                 old.culture_keywords != self.culture_keywords
             )
-        else:
-            evp_changed = True
 
         super().save(*args, **kwargs)
 
@@ -36,11 +35,9 @@ class Company(models.Model):
             from api.assessments.ai.generator import generate_questions_from_company
             from api.assessments.models import AssessmentQuestion
 
-            # Optional: clear old questions
-            self.questions.all().delete()
-
-            # Create new questions
+            self.questions.all().delete()  # Clear old questions
             questions = generate_questions_from_company(self)
+
             for q in questions:
                 AssessmentQuestion.objects.create(
                     company=self,
@@ -48,3 +45,4 @@ class Company(models.Model):
                     statement=q["statement"],
                     scale=q.get("scale", "Likert")
                 )
+
