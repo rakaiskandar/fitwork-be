@@ -4,8 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from api.companies.models import Company
-from .models import AssessmentQuestion, AssessmentSession
+from .models import AssessmentQuestion, AssessmentSession, AssessmentAnswer
 from .serializers import AssessmentQuestionSerializer, AssessmentSubmitSerializer, AssessmentSessionSerializer
+from django.db.models import Avg
 
 class GenerateAssessmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -20,7 +21,8 @@ class GenerateAssessmentView(APIView):
             if existing.exists() and not force:
                 return Response({
                     "message": "Assessment already exists for this company.",
-                    "questions": AssessmentQuestionSerializer(existing, many=True).data
+                    "questions": AssessmentQuestionSerializer(existing, many=True).data,
+                    "name": company.name
                 }, status=200)
 
             # Delete old if regenerating
@@ -57,8 +59,10 @@ class SubmitAssessmentView(APIView):
         serializer = AssessmentSubmitSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             session = serializer.save()
+            calculate_overall_score(session)  # ✅ Panggil di sini setelah jawaban disimpan
             return Response({"message": "Assessment submitted", "session_id": str(session.id)}, status=201)
         return Response(serializer.errors, status=400)
+
 
 class UserSessionListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -147,3 +151,10 @@ class CompareSessionsView(APIView):
             "session1": session_scores(sess1),
             "session2": session_scores(sess2),
         })
+        
+def calculate_overall_score(session):
+    avg = AssessmentAnswer.objects.filter(session=session).aggregate(Avg("score"))["score__avg"]
+    session.overall_score = avg
+    session.save()
+    
+
