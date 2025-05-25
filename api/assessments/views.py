@@ -66,10 +66,13 @@ class SubmitAssessmentView(APIView):
 
 class UserSessionListView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = AssessmentSessionSerializer
 
-    def get_queryset(self):
-        return AssessmentSession.objects.filter(user=self.request.user).order_by('-created_at')
+    def get(self, request):
+        sessions = AssessmentSession.objects.filter(
+            user=request.user
+        ).order_by('-created_at')
+        serializer = AssessmentSessionSerializer(sessions, many=True)
+        return Response(serializer.data)
 
 class AssessmentResultView(APIView):
     permission_classes = [IsAuthenticated]
