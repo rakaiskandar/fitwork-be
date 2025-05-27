@@ -1,11 +1,13 @@
 from collections import defaultdict
 from api.assessments.ai.generator import generate_questions_from_company
+from api.assessments.ai.evaluator import evaluate_assessment 
+from api.assessments.ai.comparator import evaluate_comparison 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from api.companies.models import Company
-from .models import AssessmentQuestion, AssessmentSession, AssessmentAnswer
-from .serializers import AssessmentQuestionSerializer, AssessmentSubmitSerializer, AssessmentSessionSerializer
+from .models import *
+from .serializers import *
 from django.db.models import Avg
 
 class GenerateAssessmentView(APIView):
@@ -51,19 +53,7 @@ class GenerateAssessmentView(APIView):
             return Response({"error": "Company not found"}, status=404)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
-
-class SubmitAssessmentView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        serializer = AssessmentSubmitSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            session = serializer.save()
-            calculate_overall_score(session)  # ✅ Panggil di sini setelah jawaban disimpan
-            return Response({"message": "Assessment submitted", "session_id": str(session.id)}, status=201)
-        return Response(serializer.errors, status=400)
-
-
+        
 class UserSessionListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -73,6 +63,46 @@ class UserSessionListView(APIView):
         ).order_by('-created_at')
         serializer = AssessmentSessionSerializer(sessions, many=True)
         return Response(serializer.data)
+
+class SubmitAssessmentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AssessmentSubmitSerializer(
+            data=request.data, context={'request': request}
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        session = serializer.save()
+
+        # 1. calculate and save overall
+        overall = session.update_overall_score()
+
+        # 2. generate & save AI evaluation
+        # collect per-dimension
+        answers = session.answers.select_related('question')
+        dim_scores = defaultdict(list)
+        for ans in answers:
+            dim_scores[ans.question.dimension].append(ans.score)
+        dimension_results = {
+            d: sum(scores) / len(scores) for d, scores in dim_scores.items()
+        }
+        try:
+            summary = evaluate_assessment(
+                session.company, overall, dimension_results
+            )
+            session.set_ai_evaluation(summary)
+        except Exception:
+            summary = None  # or log
+
+        return Response(
+            {
+                "message": "Assessment submitted",
+                "session": AssessmentSessionSerializer(session).data
+            },
+            status=201
+        )
 
 class AssessmentResultView(APIView):
     permission_classes = [IsAuthenticated]
@@ -100,6 +130,8 @@ class AssessmentResultView(APIView):
 
             overall = round(sum([s for sl in dimension_scores.values() for s in sl]) / answers.count(), 2)
 
+            summary = session.evaluation
+            
             return Response({
                 "company": company.name,
                 "user": request.user.email,
@@ -112,7 +144,8 @@ class AssessmentResultView(APIView):
                         "score": ans.score
                     }
                     for ans in answers
-                ]
+                ],
+                "evaluation": summary
             })
 
         except Company.DoesNotExist:
@@ -142,6 +175,7 @@ class CompareSessionsView(APIView):
 
             per_dim = {d: round(sum(scores)/len(scores), 2) for d, scores in dim_scores.items()}
             overall = round(sum([s for sc in dim_scores.values() for s in sc]) / sess.answers.count(), 2)
+            
             return {
                 "session_id": str(sess.id),
                 "company": sess.company.name,
@@ -149,10 +183,37 @@ class CompareSessionsView(APIView):
                 "overall_score": overall,
                 "dimension_scores": per_dim
             }
+        result1 = session_scores(sess1)
+        result2 = session_scores(sess2)
+        
+        comp_qs = AssessmentComparison.objects.filter(
+            user=user,
+            session_a__in=[sess1, sess2],
+            session_b__in=[sess1, sess2],
+        )
+        comp_obj = comp_qs.first()
 
+        # If not found, generate and save a new one
+        if not comp_obj:
+            try:
+                comparison_text = evaluate_comparison(result1, result2)
+            except Exception:
+                comparison_text = "Comparison analysis unavailable."
+
+            comp_obj = AssessmentComparison.objects.create(
+                user=user,
+                session_a=sess1,
+                session_b=sess2,
+                comparison=comparison_text
+            )
+
+        # Serialize and return
+        serializer = AssessmentComparisonSerializer(comp_obj)
         return Response({
-            "session1": session_scores(sess1),
-            "session2": session_scores(sess2),
+            "session1": result1,
+            "session2": result2,
+            "comparison": comp_obj.comparison,
+            "comparison_record": serializer.data
         })
         
 def calculate_overall_score(session):

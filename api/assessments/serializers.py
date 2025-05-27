@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AssessmentQuestion, AssessmentSession, AssessmentAnswer
+from .models import AssessmentQuestion, AssessmentSession, AssessmentAnswer, AssessmentComparison
 
 class AssessmentQuestionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,5 +48,11 @@ class AssessmentSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AssessmentSession
-        fields = ['id', 'company', 'company_name', 'created_at', 'overall_score']
+        fields = ['id', 'company', 'company_name', 'created_at', 'overall_score', 'evaluation']
+        read_only_fields = fields
+
+class AssessmentComparisonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssessmentComparison
+        fields = ['id', 'session_a', 'session_b', 'comparison', 'created_at']
         read_only_fields = fields
