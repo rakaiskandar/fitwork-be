@@ -6,8 +6,11 @@ class IsFitworkAdmin(BasePermission):
 
 class IsCompanyAdmin(BasePermission):
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated and request.user.is_company_admin
-
+        return bool(request.user and 
+                    request.user.is_authenticated and 
+                    request.user.is_company_admin and
+                    request.user.company_id) 
+        
 class IsOwnerOrFitworkAdmin(BasePermission):
     """
     Only company admins can update their own company.

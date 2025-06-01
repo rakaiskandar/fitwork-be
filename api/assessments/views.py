@@ -3,12 +3,15 @@ from api.assessments.ai.generator import generate_questions_from_company
 from api.assessments.ai.evaluator import evaluate_assessment 
 from api.assessments.ai.comparator import evaluate_comparison 
 from rest_framework.views import APIView
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from api.common.permissions import IsCompanyAdmin
 from api.companies.models import Company
 from .models import *
 from .serializers import *
-from django.db.models import Avg
+from django.db.models import Avg, OuterRef, Subquery, FloatField # Untuk kalkulasi
+from django.db.models.functions import Coalesce
 
 class GenerateAssessmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -221,4 +224,102 @@ def calculate_overall_score(session):
     session.overall_score = avg
     session.save()
     
+class CompanyAssessmentOverviewView(APIView):
+    """
+    Menyediakan overview data assessment untuk sebuah perusahaan,
+    termasuk daftar pertanyaan, rata-rata skor tiap pertanyaan dari semua kandidat,
+    rata-rata skor keseluruhan perusahaan, dan jumlah total kandidat.
+    """
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, company_id):
+        try:
+            company = Company.objects.get(id=company_id)
+        except Company.DoesNotExist:
+            return Response({"error": "Company not found"}, status=404)
+
+        # 1. Hitung rata-rata skor keseluruhan untuk perusahaan
+        overall_avg_data = AssessmentAnswer.objects.filter(
+            session__company_id=company_id
+        ).aggregate(overall_company_average_score=Avg('score'))
+        
+        overall_company_average_score = overall_avg_data.get('overall_company_average_score')
+        if overall_company_average_score is not None:
+            overall_company_average_score = round(overall_company_average_score, 2)
+
+        # 2. Dapatkan pertanyaan beserta rata-rata skor individualnya dari semua kandidat
+        avg_score_per_question_subquery = AssessmentAnswer.objects.filter(
+            question_id=OuterRef('pk') # Menggunakan pk untuk merujuk ke primary key AssessmentQuestion
+        ).values('question_id').annotate(
+            calculated_avg=Avg('score')
+        ).values('calculated_avg')
+
+        questions_queryset = AssessmentQuestion.objects.filter(
+            company_id=company_id
+        ).annotate(
+            average_score_all_candidates=Coalesce(
+                Subquery(avg_score_per_question_subquery, output_field=FloatField()),
+                None # Menggunakan None jika tidak ada skor, akan menjadi null di JSON
+            )
+        ).order_by('dimension', 'created_at') # Urutkan berdasarkan dimensi lalu tanggal dibuat
+
+        questions_data = []
+        for q in questions_queryset:
+            avg_score = q.average_score_all_candidates
+            questions_data.append({
+                "id": str(q.id),
+                "statement": q.statement,
+                "dimension": q.dimension,
+                "average_score_all_candidates": round(avg_score, 2) if avg_score is not None else None
+            })
+        
+        # 3. Hitung jumlah total kandidat (unique users) yang telah mengambil assessment untuk perusahaan ini
+        total_candidates = AssessmentSession.objects.filter(
+            company_id=company_id
+        ).values('user').distinct().count()
+
+        response_data = {
+            "company_name": company.name,
+            "overall_average_score": overall_company_average_score,
+            "total_candidates": total_candidates,
+            "questions": questions_data
+        }
+
+        return Response(response_data)
+    
+class CompanyCandidateSessionsListView(APIView): # Contoh jika menggunakan APIView
+    permission_classes = [IsAuthenticated, IsCompanyAdmin]
+
+    def get(self, request, *args, **kwargs): # Pastikan metode GET ada dan benar
+        user = request.user
+        if not user.company_id:
+            return Response({"detail": "Admin perusahaan tidak terasosiasi dengan perusahaan."}, status=403)
+
+        queryset = AssessmentSession.objects.filter(company_id=user.company_id)\
+                                          .select_related('user', 'company')\
+                                          .order_by('-created_at')
+        serializer = AdminAssessmentSessionSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class SessionDetailView(RetrieveAPIView):
+    queryset = AssessmentSession.objects.prefetch_related(
+        'answers', 'answers__question', 'user', 'company' # Prefetch for efficiency
+    ).all()
+    serializer_class = SessionDetailSerializer # Use the detailed serializer
+    permission_classes = [IsAuthenticated, IsCompanyAdmin]
+    lookup_field = 'id' # Or 'pk' if your URL uses <pk>
+    lookup_url_kwarg = 'session_id' # Matches <uuid:session_id> in URL
+
+    def get_object(self):
+        # Standard get_object will use queryset, lookup_field, and lookup_url_kwarg
+        obj = super().get_object()
+
+        # Verify that the company admin can access this session
+        # (i.e., the session belongs to their company)
+        user = self.request.user
+        if obj.company_id != user.company_id:
+            # You can raise a PermissionDenied or return a 404/403 explicitly
+            # Raising PermissionDenied is idiomatic for DRF
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You do not have permission to view this assessment session.")
+        return obj

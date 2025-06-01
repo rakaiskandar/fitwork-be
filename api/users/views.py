@@ -43,5 +43,6 @@ class MeView(APIView):
             "email": user.email,
             "is_candidate": user.is_candidate,
             "is_company_admin": user.is_company_admin,
-            "is_fitwork_admin": user.is_fitwork_admin
+            "is_fitwork_admin": user.is_fitwork_admin,
+            "company_id": user.company_id
         })
