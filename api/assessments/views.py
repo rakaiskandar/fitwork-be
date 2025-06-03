@@ -225,11 +225,6 @@ def calculate_overall_score(session):
     session.save()
     
 class CompanyAssessmentOverviewView(APIView):
-    """
-    Menyediakan overview data assessment untuk sebuah perusahaan,
-    termasuk daftar pertanyaan, rata-rata skor tiap pertanyaan dari semua kandidat,
-    rata-rata skor keseluruhan perusahaan, dan jumlah total kandidat.
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, company_id):
@@ -287,10 +282,10 @@ class CompanyAssessmentOverviewView(APIView):
 
         return Response(response_data)
     
-class CompanyCandidateSessionsListView(APIView): # Contoh jika menggunakan APIView
+class CompanyCandidateSessionsListView(APIView):
     permission_classes = [IsAuthenticated, IsCompanyAdmin]
 
-    def get(self, request, *args, **kwargs): # Pastikan metode GET ada dan benar
+    def get(self, request, *args, **kwargs):
         user = request.user
         if not user.company_id:
             return Response({"detail": "Admin perusahaan tidak terasosiasi dengan perusahaan."}, status=403)

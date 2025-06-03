@@ -1,4 +1,4 @@
-from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, ListAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, ListAPIView, RetrieveAPIView, DestroyAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Company
@@ -22,6 +22,12 @@ class CompanyCreateView(CreateAPIView):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated, IsFitworkAdmin]
+
+class CompanyDestroyView(DestroyAPIView):
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+    permission_classes = [IsAuthenticated, IsFitworkAdmin]
+    lookup_field = 'pk' # Uses UUID
 
 class CompanyEVPUpdateView(RetrieveUpdateAPIView):
     serializer_class = UpdateEVPCompanySerializer

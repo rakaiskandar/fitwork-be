@@ -72,20 +72,101 @@ class CustomEmailTokenSerializer(TokenObtainPairSerializer):
 
         return token
     
-class RegisterCompanyAdminSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+class AdminUserListSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'password', 'company_id']
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'is_candidate', 'is_company_admin', 'is_fitwork_admin',
+            'company', 'company_name',
+            'is_active', 'date_joined'
+        ]
+        
+class AdminUserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+    company = serializers.UUIDField(source='company_id', allow_null=True, required=False) 
+
+    class Meta:
+        model = User
+        fields = ['email', 'username', 'password', 'first_name', 'last_name',
+                  'is_candidate', 'is_company_admin', 'is_fitwork_admin', 'company']
+
+    def validate_is_fitwork_admin(self, value):
+        if value: # If attempting to set is_fitwork_admin to True
+            raise serializers.ValidationError("Creating other Fitwork admin users is not permitted through this interface.")
+        return value # Should always be False or not present
+
+    def validate(self, data):
+        if data.get('is_fitwork_admin'):
+             raise serializers.ValidationError({"is_fitwork_admin": "Cannot create Fitwork admins here."})
+         
+        return data
 
     def create(self, validated_data):
-        return User.objects.create_user(
+        company_id_val = validated_data.pop('company_id', None)
+        
+        validated_data['is_fitwork_admin'] = False 
+
+        user = User.objects.create_user(
             email=validated_data['email'],
             username=validated_data['username'],
             password=validated_data['password'],
-            company_id=validated_data['company_id'],
-            is_candidate=False,
-            is_company_admin=True
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            is_candidate=validated_data.get('is_candidate', False),
+            is_company_admin=validated_data.get('is_company_admin', False),
+            is_fitwork_admin=False, # Overriding any input, ensuring it's false
+            company_id=company_id_val if validated_data.get('is_company_admin') else None
         )
+        return user
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    company = serializers.UUIDField(source='company_id', allow_null=True, required=False)
+
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email', 'first_name', 'last_name',
+            'is_candidate', 'is_company_admin', 'is_fitwork_admin',
+            'company', 
+            'is_active'
+        ]
+        extra_kwargs = {
+            'email': {'required': False}, 
+            'username': {'required': False},
+            'is_fitwork_admin': {'read_only': True} # Prevent updating this field via this serializer directly
+        }
+
+    def validate(self, data):
+        instance = self.instance # The user being updated
+
+        if instance and instance.is_fitwork_admin:
+             raise serializers.ValidationError("Fitwork admin profiles cannot be modified via this interface.")
+
+        if data.get('is_fitwork_admin'):
+            raise serializers.ValidationError(
+                {"is_fitwork_admin": "Cannot change 'is_fitwork_admin' status via this interface."}
+            )
+
+        is_company_admin_target_state = data.get('is_company_admin', instance.is_company_admin if instance else False)
+        company_id_target = data.get('company_id', instance.company_id if instance else None)
+
+        if is_company_admin_target_state and not company_id_target:
+            raise serializers.ValidationError({"company": "Company is required if user is set as a company admin."})
+        
+        if not is_company_admin_target_state:
+            data['company_id'] = None # This will be used by the update method
+        
+        return data
+
+    def update(self, instance, validated_data):
+        if 'company_id' in validated_data: # company_id could be None from validate method
+            instance.company_id = validated_data.pop('company_id')
+        
+        if 'is_company_admin' in validated_data and not validated_data['is_company_admin']:
+            instance.company = None # Ensure company FK is cleared
+
+        return super().update(instance, validated_data)
 
