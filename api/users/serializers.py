@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
+from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
 
@@ -124,26 +125,27 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
 
 class AdminUserUpdateSerializer(serializers.ModelSerializer):
     company = serializers.UUIDField(source='company_id', allow_null=True, required=False)
+    password = serializers.CharField(write_only=True, required=False, allow_blank=False, min_length=8)
 
     class Meta:
         model = User
         fields = [
             'username', 'email', 'first_name', 'last_name',
             'is_candidate', 'is_company_admin', 'is_fitwork_admin',
-            'company', 
-            'is_active'
+            'company', 'is_active', 'password'
         ]
         extra_kwargs = {
-            'email': {'required': False}, 
+            'email': {'required': False},
             'username': {'required': False},
-            'is_fitwork_admin': {'read_only': True} # Prevent updating this field via this serializer directly
+            'is_fitwork_admin': {'read_only': True},
+            'password': {'write_only': True},
         }
 
     def validate(self, data):
-        instance = self.instance # The user being updated
+        instance = self.instance  # The user being updated
 
         if instance and instance.is_fitwork_admin:
-             raise serializers.ValidationError("Fitwork admin profiles cannot be modified via this interface.")
+            raise serializers.ValidationError("Fitwork admin profiles cannot be modified via this interface.")
 
         if data.get('is_fitwork_admin'):
             raise serializers.ValidationError(
@@ -155,18 +157,22 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
 
         if is_company_admin_target_state and not company_id_target:
             raise serializers.ValidationError({"company": "Company is required if user is set as a company admin."})
-        
+
         if not is_company_admin_target_state:
-            data['company_id'] = None # This will be used by the update method
-        
+            data['company_id'] = None
+
         return data
 
     def update(self, instance, validated_data):
-        if 'company_id' in validated_data: # company_id could be None from validate method
+        if 'company_id' in validated_data:
             instance.company_id = validated_data.pop('company_id')
-        
+
         if 'is_company_admin' in validated_data and not validated_data['is_company_admin']:
-            instance.company = None # Ensure company FK is cleared
+            instance.company = None
+
+        # Handle password update
+        if 'password' in validated_data:
+            instance.password = make_password(validated_data.pop('password'))
 
         return super().update(instance, validated_data)
 
